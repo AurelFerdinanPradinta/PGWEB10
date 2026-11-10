@@ -1,17 +1,19 @@
 <?php
 
 // Mengambil ID data dari URL
-if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
+if (!isset($_GET['id']) || !ctype_digit($_GET['id']) || (int)$_GET['id'] < 1) {
     die("ID data tidak valid.");
 }
 
-$id = (int) $_GET['id'];
+$id = (int)$_GET['id'];
+
 
 // Pengaturan koneksi database
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "BioporiYogya";
+$dbname = "bioporiyogya";
+
 
 // Membuat koneksi
 $conn = new mysqli(
@@ -21,10 +23,16 @@ $conn = new mysqli(
     $dbname
 );
 
+
 // Memeriksa koneksi
 if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
+
+
+// Mengatur karakter database
+$conn->set_charset("utf8mb4");
+
 
 // Menyiapkan perintah penghapusan data
 $stmt = $conn->prepare(
@@ -35,8 +43,10 @@ if (!$stmt) {
     die("Gagal menyiapkan perintah: " . $conn->error);
 }
 
+
 // Menghubungkan parameter ID
 $stmt->bind_param("i", $id);
+
 
 // Menjalankan penghapusan data
 if ($stmt->execute()) {

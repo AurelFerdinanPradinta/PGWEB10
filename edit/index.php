@@ -1,10 +1,23 @@
 <?php
 
+// Memeriksa ID dari URL
+if (
+    !isset($_GET['id']) ||
+    !ctype_digit($_GET['id']) ||
+    (int)$_GET['id'] < 1
+) {
+    die("ID data tidak valid.");
+}
+
+$id = (int)$_GET['id'];
+
+
 // Pengaturan koneksi database
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "BioporiYogya";
+$dbname = "bioporiyogya";
+
 
 // Membuat koneksi
 $conn = new mysqli(
@@ -14,159 +27,205 @@ $conn = new mysqli(
     $dbname
 );
 
+
 // Memeriksa koneksi
 if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
-// Mengambil ID dari URL
-if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
-    die("ID data tidak valid.");
-}
+$conn->set_charset("utf8mb4");
 
-$id = (int) $_GET['id'];
 
 // Mengambil data berdasarkan ID
-$sql = "SELECT * FROM biopori WHERE id = $id";
-$result = $conn->query($sql);
+$stmt = $conn->prepare(
+    "SELECT * FROM biopori WHERE id = ?"
+);
 
-// Memeriksa ketersediaan data
-if (!$result || $result->num_rows == 0) {
+if (!$stmt) {
+    die("Gagal menyiapkan perintah: " . $conn->error);
+}
+
+$stmt->bind_param("i", $id);
+$stmt->execute();
+
+$result = $stmt->get_result();
+
+
+// Memeriksa data
+if ($result->num_rows === 0) {
     die("Data biopori tidak ditemukan.");
 }
 
-// Mengambil data
 $row = $result->fetch_assoc();
 
-// Menutup koneksi
+$stmt->close();
 $conn->close();
+
+
+// Mengamankan tampilan data
+function e($value) {
+    return htmlspecialchars(
+        (string)($value ?? ''),
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
 
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Edit Data Biopori</title>
 </head>
+
 <body>
 
     <h2>Form Edit Data Biopori</h2>
 
-    <form action="edit.php"
-          onsubmit="return validateForm()"
-          method="post">
+    <form action="edit.php" method="POST">
 
-        <!-- Menyimpan ID data -->
-        <input type="hidden"
-               name="id"
-               value="<?= htmlspecialchars((string)$row['id']) ?>">
+        <input
+            type="hidden"
+            name="id"
+            value="<?php echo e($row['id']); ?>"
+        >
 
-        <label for="ogc_fid">OGC FID:</label><br>
-        <input type="number"
-               id="ogc_fid"
-               name="ogc_fid"
-               value="<?= htmlspecialchars((string)$row['ogc_fid']) ?>"
-               required>
+        <p>
+            <label>OGC FID</label><br>
+            <input
+                type="number"
+                name="ogc_fid"
+                value="<?php echo e($row['ogc_fid']); ?>"
+                min="1"
+                step="1"
+                required
+            >
+        </p>
+
+        <p>
+            <label>No</label><br>
+            <input
+                type="number"
+                name="no"
+                value="<?php echo e($row['no']); ?>"
+                min="1"
+                step="1"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Nama/Kode</label><br>
+            <input
+                type="text"
+                name="nama_kode"
+                value="<?php echo e($row['nama/kode']); ?>"
+                maxlength="100"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Kemantren</label><br>
+            <input
+                type="text"
+                name="kemantren"
+                value="<?php echo e($row['kemantren']); ?>"
+                maxlength="100"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Kelurahan</label><br>
+            <input
+                type="text"
+                name="kelurahan"
+                value="<?php echo e($row['kelurahan']); ?>"
+                maxlength="100"
+                required
+            >
+        </p>
+
+        <p>
+            <label>RW</label><br>
+            <input
+                type="number"
+                name="rw"
+                value="<?php echo e($row['rw']); ?>"
+                min="0"
+                step="1"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Nama Bank</label><br>
+            <input
+                type="text"
+                name="nama_bank_"
+                value="<?php echo e($row['nama_bank_']); ?>"
+                maxlength="150"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Alamat</label><br>
+            <input
+                type="text"
+                name="alamat"
+                value="<?php echo e($row['alamat']); ?>"
+                maxlength="255"
+                required
+            >
+        </p>
+
+        <p>
+            <label>Jumlah</label><br>
+            <input
+                type="number"
+                name="jumlah"
+                value="<?php echo e($row['jumlah']); ?>"
+                min="0"
+                step="1"
+            >
+        </p>
+
+        <p>
+            <label>Latitude</label><br>
+            <input
+                type="number"
+                name="latitude"
+                value="<?php echo e($row['latitude']); ?>"
+                step="any"
+            >
+        </p>
+
+        <p>
+            <label>Longitude</label><br>
+            <input
+                type="number"
+                name="longitude"
+                value="<?php echo e($row['longitude']); ?>"
+                step="any"
+            >
+        </p>
+
         <br>
 
-        <label for="no">Nomor:</label><br>
-        <input type="number"
-               id="no"
-               name="no"
-               value="<?= htmlspecialchars((string)$row['no']) ?>"
-               required>
-        <br>
+        <button type="submit">
+            Simpan Perubahan
+        </button>
 
-        <label for="biopori">Biopori:</label><br>
-        <input type="text"
-               id="biopori"
-               name="biopori"
-               value="<?= htmlspecialchars($row['biopori'], ENT_QUOTES, 'UTF-8') ?>"
-               required>
-        <br>
-
-        <label for="alamat">Alamat:</label><br>
-        <input type="text"
-               id="alamat"
-               name="alamat"
-               value="<?= htmlspecialchars($row['alamat'], ENT_QUOTES, 'UTF-8') ?>"
-               required>
-        <br>
-
-        <label for="jumlah">Jumlah:</label><br>
-        <input type="number"
-               id="jumlah"
-               name="jumlah"
-               min="0"
-               step="1"
-               value="<?= htmlspecialchars((string)$row['jumlah']) ?>"
-               required>
-        <br>
-
-        <label for="longitude">Longitude:</label><br>
-        <input type="number"
-               id="longitude"
-               name="longitude"
-               step="any"
-               value="<?= htmlspecialchars((string)$row['longitude']) ?>"
-               required>
-        <br>
-
-        <label for="latitude">Latitude:</label><br>
-        <input type="number"
-               id="latitude"
-               name="latitude"
-               step="any"
-               value="<?= htmlspecialchars((string)$row['latitude']) ?>"
-               required>
-        <br><br>
-
-        <input type="submit" value="Submit">
+        <a href="../index.php">
+            Batal
+        </a>
 
     </form>
-
-    <p id="informasi"></p>
-
-    <script>
-        function validateForm() {
-
-            let ogc_fid = Number(document.getElementById("ogc_fid").value);
-            let no = Number(document.getElementById("no").value);
-            let jumlah = Number(document.getElementById("jumlah").value);
-
-            let longitude = Number(document.getElementById("longitude").value);
-            let latitude = Number(document.getElementById("latitude").value);
-
-            let text = "";
-
-            if (
-                !Number.isInteger(ogc_fid) ||
-                !Number.isInteger(no) ||
-                !Number.isInteger(jumlah) ||
-                jumlah < 0
-            ) {
-                text = "OGC FID, nomor, dan jumlah harus berupa bilangan bulat yang valid.";
-            }
-            else if (
-                !Number.isFinite(longitude) ||
-                !Number.isFinite(latitude) ||
-                longitude < -180 ||
-                longitude > 180 ||
-                latitude < -90 ||
-                latitude > 90
-            ) {
-                text = "Koordinat longitude atau latitude tidak valid.";
-            }
-
-            if (text !== "") {
-                document.getElementById("informasi").innerHTML = text;
-                return false;
-            }
-
-            return true;
-        }
-    </script>
 
 </body>
 </html>

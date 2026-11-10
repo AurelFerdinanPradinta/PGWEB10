@@ -5,62 +5,103 @@ $id = $_POST['id'] ?? '';
 
 $ogc_fid = $_POST['ogc_fid'] ?? '';
 $no = $_POST['no'] ?? '';
-$biopori = trim($_POST['biopori'] ?? '');
+
+$nama_kode = trim($_POST['nama_kode'] ?? '');
+$kemantren = trim($_POST['kemantren'] ?? '');
+$kelurahan = trim($_POST['kelurahan'] ?? '');
+
+$rw = $_POST['rw'] ?? '';
+
+$nama_bank = trim($_POST['nama_bank_'] ?? '');
 $alamat = trim($_POST['alamat'] ?? '');
+
 $jumlah = $_POST['jumlah'] ?? '';
-$longitude = $_POST['longitude'] ?? '';
-$latitude = $_POST['latitude'] ?? '';
+
+$latitude = trim($_POST['latitude'] ?? '');
+$longitude = trim($_POST['longitude'] ?? '');
+
+
+// Memeriksa ID
+if (
+    !ctype_digit((string)$id) ||
+    (int)$id < 1
+) {
+    die("ID data tidak valid.");
+}
+
 
 // Memeriksa kelengkapan data
 if (
-    !ctype_digit((string)$id) ||
-    (int)$id < 1 ||
-    $ogc_fid === '' ||
-    $no === '' ||
-    $biopori === '' ||
-    $alamat === '' ||
-    $jumlah === '' ||
-    $longitude === '' ||
-    $latitude === ''
-) {
-    die("Semua kolom harus diisi dengan benar.");
-}
-
-// Memeriksa tipe data bilangan bulat
-if (
     !ctype_digit((string)$ogc_fid) ||
+    (int)$ogc_fid < 1 ||
+
     !ctype_digit((string)$no) ||
-    !ctype_digit((string)$jumlah)
+    (int)$no < 1 ||
+
+    $nama_kode === '' ||
+    $kemantren === '' ||
+    $kelurahan === '' ||
+
+    !ctype_digit((string)$rw) ||
+
+    $nama_bank === '' ||
+    $alamat === ''
 ) {
-    die("OGC FID, nomor, dan jumlah harus berupa bilangan bulat.");
+    die("Periksa kembali kelengkapan data.");
 }
 
-// Memeriksa koordinat dan jumlah
+
+// Memeriksa jumlah
 if (
-    !is_numeric($longitude) ||
-    !is_numeric($latitude) ||
-    (int)$jumlah < 0 ||
-    (float)$longitude < -180 ||
-    (float)$longitude > 180 ||
-    (float)$latitude < -90 ||
-    (float)$latitude > 90
+    $jumlah !== '' &&
+    (
+        !ctype_digit((string)$jumlah) ||
+        (int)$jumlah < 0
+    )
 ) {
-    die("Periksa kembali jumlah dan koordinat.");
+    die("Jumlah harus berupa bilangan bulat dan tidak boleh negatif.");
 }
 
-// Mengubah data numerik
+
+// Memeriksa koordinat
+if (
+    ($latitude === '') !== ($longitude === '')
+) {
+    die("Latitude dan longitude harus diisi bersamaan.");
+}
+
+if ($latitude !== '' && (
+    !is_numeric($latitude) ||
+    !is_numeric($longitude) ||
+    (float)$latitude < -90 ||
+    (float)$latitude > 90 ||
+    (float)$longitude < -180 ||
+    (float)$longitude > 180
+)) {
+    die("Periksa kembali koordinat latitude dan longitude.");
+}
+
+
+// Mengubah tipe data
 $id = (int)$id;
 $ogc_fid = (int)$ogc_fid;
 $no = (int)$no;
-$jumlah = (int)$jumlah;
-$longitude = (float)$longitude;
-$latitude = (float)$latitude;
+$rw = (int)$rw;
+
+
+// Mengatur nilai kosong menjadi NULL
+$jumlah = ($jumlah === '') ? null : (string)(int)$jumlah;
+
+$latitude = ($latitude === '') ? null : $latitude;
+$longitude = ($longitude === '') ? null : $longitude;
+
 
 // Pengaturan koneksi database
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "BioporiYogya";
+$dbname = "bioporiyogya";
+
 
 // Membuat koneksi
 $conn = new mysqli(
@@ -70,42 +111,56 @@ $conn = new mysqli(
     $dbname
 );
 
+
 // Memeriksa koneksi
 if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
-// Menyiapkan perintah UPDATE
-$stmt = $conn->prepare(
-    "UPDATE biopori SET
-        ogc_fid = ?,
-        `no` = ?,
-        biopori = ?,
-        alamat = ?,
-        jumlah = ?,
-        longitude = ?,
-        latitude = ?
-     WHERE id = ?"
-);
+$conn->set_charset("utf8mb4");
+
+
+// Memperbarui data biopori
+$sql = "UPDATE biopori SET
+            ogc_fid = ?,
+            `no` = ?,
+            `nama/kode` = ?,
+            kemantren = ?,
+            kelurahan = ?,
+            rw = ?,
+            nama_bank_ = ?,
+            alamat = ?,
+            jumlah = ?,
+            latitude = ?,
+            longitude = ?
+        WHERE id = ?";
+
+$stmt = $conn->prepare($sql);
 
 if (!$stmt) {
     die("Gagal menyiapkan perintah: " . $conn->error);
 }
 
+
 // Menghubungkan parameter
 $stmt->bind_param(
-    "iissiddi",
+    "iisssisssssi",
     $ogc_fid,
     $no,
-    $biopori,
+    $nama_kode,
+    $kemantren,
+    $kelurahan,
+    $rw,
+    $nama_bank,
     $alamat,
     $jumlah,
-    $longitude,
     $latitude,
+    $longitude,
     $id
 );
 
-// Menjalankan pembaruan data
+
+// Menjalankan perintah
 if ($stmt->execute()) {
 
     $stmt->close();
@@ -123,6 +178,7 @@ if ($stmt->execute()) {
     $conn->close();
 
     die("Data gagal diperbarui: " . $error);
+
 }
 
 ?>

@@ -6,7 +6,7 @@
 </head>
 <body>
 
-    <h2>Form Input Data Biopori</h2>
+    <h2>Form Input Data Biopori Kota Yogyakarta</h2>
 
     <form action="input.php"
           onsubmit="return validateForm()"
@@ -14,31 +14,47 @@
 
         <label for="ogc_fid">OGC FID:</label><br>
         <input type="number" id="ogc_fid" name="ogc_fid"
-               step="1" required><br>
+               step="1" min="1" required><br>
 
         <label for="no">Nomor:</label><br>
         <input type="number" id="no" name="no"
-               step="1" required><br>
+               step="1" min="1" required><br>
 
-        <label for="biopori">Biopori:</label><br>
-        <input type="text" id="biopori" name="biopori"
-               required><br>
+        <label for="nama_kode">Nama/Kode:</label><br>
+        <input type="text" id="nama_kode" name="nama_kode"
+               maxlength="100" required><br>
+
+        <label for="kemantren">Kemantren:</label><br>
+        <input type="text" id="kemantren" name="kemantren"
+               maxlength="100" required><br>
+
+        <label for="kelurahan">Kelurahan:</label><br>
+        <input type="text" id="kelurahan" name="kelurahan"
+               maxlength="100" required><br>
+
+        <label for="rw">RW:</label><br>
+        <input type="number" id="rw" name="rw"
+               step="1" min="0" required><br>
+
+        <label for="nama_bank_">Nama Bank:</label><br>
+        <input type="text" id="nama_bank_" name="nama_bank_"
+               maxlength="150" required><br>
 
         <label for="alamat">Alamat:</label><br>
         <input type="text" id="alamat" name="alamat"
-               required><br>
+               maxlength="255" required><br>
 
         <label for="jumlah">Jumlah:</label><br>
         <input type="number" id="jumlah" name="jumlah"
-               min="0" step="1" required><br>
-
-        <label for="longitude">Longitude:</label><br>
-        <input type="number" id="longitude" name="longitude"
-               step="any" required><br>
+               min="0" step="1"><br>
 
         <label for="latitude">Latitude:</label><br>
         <input type="number" id="latitude" name="latitude"
-               step="any" required><br><br>
+               step="any"><br>
+
+        <label for="longitude">Longitude:</label><br>
+        <input type="number" id="longitude" name="longitude"
+               step="any"><br><br>
 
         <input type="submit" value="Submit">
 
@@ -49,31 +65,60 @@
     <script>
         function validateForm() {
 
-            let ogc_fid = Number(document.getElementById("ogc_fid").value);
-            let no = Number(document.getElementById("no").value);
-            let jumlah = Number(document.getElementById("jumlah").value);
-            let longitude = Number(document.getElementById("longitude").value);
-            let latitude = Number(document.getElementById("latitude").value);
+            let ogc_fid = document.getElementById("ogc_fid").value;
+            let no = document.getElementById("no").value;
+            let rw = document.getElementById("rw").value;
+            let jumlah = document.getElementById("jumlah").value;
+
+            let latitude = document.getElementById("latitude").value;
+            let longitude = document.getElementById("longitude").value;
 
             let text = "";
 
+            // Memeriksa bilangan bulat
             if (
-                !Number.isInteger(ogc_fid) ||
-                !Number.isInteger(no) ||
-                !Number.isInteger(jumlah) ||
-                jumlah < 0
+                !Number.isInteger(Number(ogc_fid)) ||
+                !Number.isInteger(Number(no)) ||
+                !Number.isInteger(Number(rw))
             ) {
-                text = "OGC FID, nomor, dan jumlah harus berupa bilangan bulat yang valid.";
+                text = "OGC FID, nomor, dan RW harus berupa bilangan bulat.";
             }
+
+            // Memeriksa jumlah apabila diisi
             else if (
-                longitude < -180 || longitude > 180 ||
-                latitude < -90 || latitude > 90
+                jumlah !== "" &&
+                (
+                    !Number.isInteger(Number(jumlah)) ||
+                    Number(jumlah) < 0
+                )
             ) {
-                text = "Koordinat longitude atau latitude tidak valid.";
+                text = "Jumlah harus berupa bilangan bulat dan tidak boleh negatif.";
+            }
+
+            // Memastikan kedua koordinat diisi bersamaan
+            else if (
+                (latitude === "") !== (longitude === "")
+            ) {
+                text = "Latitude dan longitude harus diisi secara bersamaan.";
+            }
+
+            // Memeriksa rentang koordinat
+            else if (
+                latitude !== "" &&
+                (
+                    !Number.isFinite(Number(latitude)) ||
+                    !Number.isFinite(Number(longitude)) ||
+                    Number(latitude) < -90 ||
+                    Number(latitude) > 90 ||
+                    Number(longitude) < -180 ||
+                    Number(longitude) > 180
+                )
+            ) {
+                text = "Koordinat latitude atau longitude tidak valid.";
             }
 
             if (text !== "") {
-                document.getElementById("informasi").innerHTML = text;
+                document.getElementById("informasi").textContent = text;
                 return false;
             }
 
